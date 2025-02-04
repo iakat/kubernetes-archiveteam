@@ -1,0 +1,54 @@
+kind: Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+resources:
+# - blogger
+# - github
+# - imgur
+# - mediafire
+# - pastebin
+# - reddit
+# # - telegram
+# - youtube
+# - urlteam
+# - vbox7
+# - vbox8
+# - vbox9
+- nhentai
+- resources.yaml
+namespace: archiveteam
+patches:
+# # all replicas to 5
+# patches:
+# - target:
+#     kind: Deployment
+#     name: nothing
+#   patch: |-
+#     - op: add
+#       path: /spec/replicas
+#       value: 6
+#     # prefer scheduling on:
+#     # pain, netcup, strato, sloep,
+
+#     - op: add
+#       path: /spec/template/spec/affinity/nodeAffinity/preferredDuringSchedulingIgnoredDuringExecution
+#       value:
+#         - weight: 100
+#           preference:
+#             matchExpressions:
+#               - key: kubernetes.io/hostname
+#                 operator: In
+#                 values:
+#                 - pain
+#                 - netcup
+#                 - strato
+#                 - sloep
+
+
+# # except telegram, which we always limit to 250m
+# - target:
+#     kind: Deployment
+#     name: ".*(telegram|youtube|mediafire).*"
+#   patch: |-
+#     - op: replace
+#       path: /spec/template/spec/containers/0/resources/limits/cpu
+#       value: 150m

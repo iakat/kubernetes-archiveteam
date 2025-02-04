@@ -1,0 +1,26 @@
+kind: Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+resources:
+- ../base
+namePrefix: youtube-
+commonLabels:
+  app: youtube
+images:
+- name: grab
+  newName: atdr.meo.ws/archiveteam/youtube-grab
+
+
+
+# add anti affinity to not run on the same node
+patches:
+- target:
+    kind: Deployment
+  patch: |-
+    - op: add
+      path: /spec/replicas
+      value: 60
+    - op: add
+      path: /spec/template/spec/containers/0/env/-
+      value:
+        name: CONCURRENT
+        value: "5"

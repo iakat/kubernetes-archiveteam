@@ -1,0 +1,37 @@
+# deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grab
+spec:
+  strategy:
+    type: Recreate
+  template:
+    spec:
+      tolerations:
+      - key: external
+        operator: Exists
+        effect: NoSchedule
+      - key: critical-entrypoint
+        operator: Exists
+        effect: NoSchedule
+      - key: ram-2gb
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: grab
+        image: grab
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 100m
+            memory: 250Mi
+        env:
+        - name: USERNAME
+          value: "katia"
+        args:
+        - --concurrent=$(CONCURRENT)
+        - $(USERNAME)

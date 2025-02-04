@@ -1,0 +1,78 @@
+kind: Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+resources:
+- ../base
+namePrefix: picdig-
+commonLabels:
+  app: picdig
+images:
+- name: grab
+  newName: atdr.meo.ws/archiveteam/picdig-grab
+
+
+# add anti affinity to not run on the same node
+patches:
+- target:
+    kind: Deployment
+  patch: |-
+    - op: add
+      path: /spec/template/spec/affinity
+      value:
+        # max 1 per node
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - priimage
+            topologyKey: kubernetes.io/hostname
+      # add more tolerations
+    - op: add
+      path: /spec/template/spec/tolerations/-
+      value:
+        key: "ram-2gb"
+        operator: "Exists"
+        effect: "NoSchedule"
+    # add more tolerations
+    - op: add
+      path: /spec/template/spec/tolerations/-
+      value:
+        key: "critical-entrypoint"
+        operator: "Exists"
+        effect: "NoSchedule"
+    - op: add
+      path: /spec/replicas
+      value: 10
+    - op: add
+      path: /spec/template/spec/containers/0/env/-
+      value:
+        name: CONCURRENT
+        value: "4"
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/memory
+      value: 160Mi
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/memory
+      value: 160Mi
+    # and cpu
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/cpu
+      value: 30m
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/cpu
+      value: 250m
+    # do not run on orange, panda, or pink.
+    - op: add
+      path: /spec/template/spec/affinity/nodeAffinity
+      value:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - orange
+              - panda
+              - pink

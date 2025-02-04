@@ -1,0 +1,74 @@
+kind: Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+resources:
+- ../base
+namePrefix: subscene-
+commonLabels:
+  app: subscene
+images:
+- name: grab
+  newName: atdr.meo.ws/archiveteam/subscene-grab
+
+
+
+# add anti affinity to not run on the same node
+patches:
+- target:
+    kind: Deployment
+  patch: |-
+    # allow scheduling on master, toleration
+    - op: add
+      path: /spec/template/spec/tolerations
+      value:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+        value: "true"
+      # and external
+      - key: external
+        effect: NoSchedule
+      # and critical-entrypoint
+      - key: critical-entrypoint
+        effect: NoSchedule
+    - op: add
+      path: /spec/replicas
+      value: 9
+    - op: add
+      path: /spec/template/spec/containers/0/env/-
+      value:
+        name: CONCURRENT
+        value: "2"
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/memory
+      value: 1Mi
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/memory
+      value: 256Mi
+    # and cpu
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/cpu
+      value: 1m
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/cpu
+      value: 300m
+    - op: add
+      path: /spec/template/spec/affinity
+      value:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                - pink
+                - orange
+    # do not run omre than 1 pod on the same node
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - subscene
+              topologyKey: kubernetes.io/hostname

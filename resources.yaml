@@ -1,0 +1,21 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-egress-public
+  namespace: archiveteam
+specs:
+- endpointSelector: {}
+  ingress:
+  - fromEntities:
+    - world
+  egress:
+  - toEntities:
+    - world
+
+
+---
+# ns
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: archiveteam

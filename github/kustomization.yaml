@@ -1,0 +1,44 @@
+kind: Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+resources:
+- ../base
+namePrefix: github-
+commonLabels:
+  app: github
+images:
+- name: grab
+  newName: atdr.meo.ws/archiveteam/github-grab
+
+
+
+# add anti affinity to not run on the same node
+patches:
+- target:
+    kind: Deployment
+  patch: |-
+    - op: add
+      path: /spec/template/spec/affinity
+      value:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - github
+            topologyKey: kubernetes.io/hostname
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/master
+                operator: DoesNotExist
+    - op: add
+      path: /spec/replicas
+      value: 3
+    - op: add
+      path: /spec/template/spec/containers/0/env/-
+      value:
+        name: CONCURRENT
+        value: "5"
